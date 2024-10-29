@@ -71,7 +71,7 @@ def main():
                             print(property + ": " + list_item)
                 else:
                     if type != "target":
-                        if type == "refetrents" or type == "datasets":
+                        if type == "referents" or type == "datasets":
                             for list_item in dict_entities[ID][type]:
                                 print(type + ": " + list_item)
                     else:
@@ -86,7 +86,7 @@ def main():
                                 print(property + ": " + list_item)
                     else:
                         if type != "target":
-                            if type == "refetrents" or type == "datasets":
+                            if type == "referents" or type == "datasets":
                                 for list_item in dict_entities[ID][type]:
                                     print(type + ": " + list_item)
                         else:
@@ -101,7 +101,7 @@ def main():
                                 print(property + ": " + list_item)
                     else:
                         if type != "target":
-                            if type == "refetrents" or type == "datasets":
+                            if type == "referents" or type == "datasets":
                                 for list_item in dict_entities[ID][type]:
                                     print(type + ": " + list_item)
                         else:
