@@ -35,7 +35,7 @@ def main():
     file.close()
 
     #print("Building Topics...")
-    with open("targets.nested.json", "r") as file:
+    with open("topics.nested.json", "r") as file:
         for line in file:
             topic = json.loads(line)
             dict_topics[topic["id"]] = topic
