@@ -53,10 +53,8 @@ def main():
     dict_entities = {}
   
     if os.path.exists(filename):
-        print("Loading from dictionary...Please wait!")
         dict_entities = unpickle_dict(filename)
     else:
-        print("Building Entities...")
         with open("entities.ftm.json", "r") as file:
             for line in file:
                 entity = json.loads(line)
@@ -65,7 +63,6 @@ def main():
         pickle_dict(dict_entities)
 
     dict_stats = {}
-    #i = 0
     for ID in dict_entities:
         for type in dict_entities[ID]:
             if type == "properties":
@@ -76,30 +73,10 @@ def main():
                                 dict_stats[list_item] = 1
                             else:
                                 dict_stats[list_item] += 1
-                        #print(property + ": " + list_item)
-            else:
-                if type == "target":
-                    if dict_entities[ID][type]:
-                        if not type in dict_stats:
-                            dict_stats[type] = 0
-                        dict_stats[type] += 1
-                        #print("Target: True")
-                    else:
-                        if not "Not_Targetted" in dict_stats:
-                            dict_stats["Not_Targetted"] = 0
-                        dict_stats["Not_Targetted"] += 1
-                        #print("Target: False")
-        #i = i + 1
-        #print(i)
-
-    while(1):
-        print("---=== Here are your choices ===---\n")
-        for topic in dict_stats:
-            print(topic+":"+ str(dict_stats[topic]))
-
-        choice = input("Choose from the list above:")
-
-        Print_Selection(dict_entities, choice)
+                
+    for topic in dict_stats:
+        print("\n--------------------->"+topic+":"+ str(dict_stats[topic])+ "\n")
+        Print_Selection(dict_entities, topic)
 
                         
 main()
