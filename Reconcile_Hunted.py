@@ -5,11 +5,13 @@ OutFile = "Reconciled_Persons.txt"
 
 with open(Persons_file, "r") as f:
     Persons_hunted = f.readlines()
-f.close()
 
-with open(Persons_found, "r") as f:
-    Persons_Found = f.readlines()
-f.close()
+Persons_Found = []
+with open(Persons_found, "r", errors='ignore') as f:
+    for line in f:
+        if line != ":\n":
+            if len(line) < 300:
+                Persons_Found.append(line)
 
 PersonNameCheck = []
 for Persons in Persons_hunted:
@@ -53,9 +55,11 @@ for FBdetails in Persons_Found:
                     details = details[0].split(',male,')
                 else:
                     details = [details[1]]
-
-            FirstName = details[0].split(",")[-2].strip('"')
-            LastName = details[0].split(",")[-1].strip('"')
+            try:
+                FirstName = details[0].split(",")[-2].strip('"')
+                LastName = details[0].split(",")[-1].strip('"')
+            except:
+                continue
             if FirstName != "None":
                 #print(FirstName+","+LastName)
                 if FirstName in PersonNameCheck and LastName in PersonNameCheck:
