@@ -13,7 +13,11 @@ const (
     FaceBookFile = "FaceBook_2019.txt"
     OutFile = "Persons_Found.txt"
     MAX_RESULTS = 5
-    CHUNK_SIZE = 1024
+    CHUNK_SIZE = 65535 //1024=1%, 4096=6% 65535~100% over 16 cores.
+)
+
+var (
+    mu sync.Mutex
 )
 
 type Result struct {
@@ -24,12 +28,6 @@ type Result struct {
 type Work struct {
     Person string
     Chunk []string
-}
-
-var facebookEntriesPool = sync.Pool{
-    New: func() interface{} {
-        return make([]string, 0, 1024)
-    },
 }
 
 func loadFile(filename string) ([]string, error) {
@@ -85,6 +83,9 @@ func min(a, b int) int {
 }
 
 func writeResults(results []string, outFile string) error {
+    mu.Lock()
+    defer mu.Unlock()
+
     file, err := os.OpenFile(outFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
     if err != nil {
         return err
@@ -106,6 +107,41 @@ func writeResults(results []string, outFile string) error {
     return nil
 }
 
+
+func removeDuplicates(personsList []string) []string {
+
+    var duplicateFree []string
+    var duplicate bool
+
+    for _, single := range personsList {
+        duplicate = false
+        for _, dup := range duplicateFree{
+            if single == dup{
+                duplicate = true
+                break
+            }
+        }
+        if !duplicate{
+            duplicateFree = append(duplicateFree, single)
+        }
+    }
+
+    file, err := os.OpenFile(PersonsFile, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		panic(err)
+	}
+	defer file.Close()
+
+    for _, person := range duplicateFree{
+        _, err = file.WriteString(person+"\n")
+        if err != nil {
+            fmt.Println("Error writing to file:", err)
+            panic(err)
+        }
+    }
+    return duplicateFree
+}
 
 func main() {
     fmt.Println("Reading POI file...Please wait")
@@ -131,10 +167,14 @@ func main() {
         return
     }
 
+    fmt.Println("Removing duplicates...Please wait!")
+
+    duplicateFree := removeDuplicates(personsList)
+    
     fmt.Println("Hunting...Please wait!")
 
     var wg sync.WaitGroup
-    var personsTotal int64 = int64(len(personsList))
+    var personsTotal int64 = int64(len(duplicateFree))
     results := make(chan Result, personsTotal)
     done := make(chan bool, 16)
     
@@ -158,7 +198,7 @@ func main() {
     count := int64(0)
 
     // Prepare work to workers
-    for _, personName := range personsList {
+    for _, personName := range duplicateFree {
 
         var resultSlice []string
         
