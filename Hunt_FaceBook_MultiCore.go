@@ -6,6 +6,7 @@ import (
     "os"
     "sync"
 	"strings"
+    "math"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
     FaceBookFile = "FaceBook_2019.txt"
     OutFile = "Persons_Found.txt"
     MAX_RESULTS = 5
-    CHUNK_SIZE = 65535 //1024=1%, 4096=6% 65535~100% over 16 cores.
+    NB_CORES = 16
 )
 
 var (
@@ -108,10 +109,19 @@ func writeResults(results []string, outFile string) error {
 }
 
 
-func removeDuplicates(personsList []string) []string {
+func removeDuplicates(personsNames []string) []string {
 
     var duplicateFree []string
     var duplicate bool
+
+    personsList := []string{}
+    for _, entry := range personsNames {
+        parts := strings.Split(entry, ":")
+        if len(parts) > 1 {
+            personName := strings.TrimSpace(parts[1])
+            personsList = append(personsList, personName)
+        }
+    }
 
     for _, single := range personsList {
         duplicate = false
@@ -151,15 +161,6 @@ func main() {
         return
     }
 
-    personsList := []string{}
-    for _, entry := range personsNames {
-        parts := strings.Split(entry, ":")
-        if len(parts) > 1 {
-            personName := strings.TrimSpace(parts[1])
-            personsList = append(personsList, personName)
-        }
-    }
-
     fmt.Println("Loading FB_2019 data...Please wait!")
     facebookEntries, err := loadFile(FaceBookFile)
     if err != nil {
@@ -167,16 +168,17 @@ func main() {
         return
     }
 
-    fmt.Println("Removing duplicates...Please wait!")
+    //fmt.Println("Removing duplicates...Please wait!")
 
-    duplicateFree := removeDuplicates(personsList)
+    //duplicateFree := removeDuplicates(personsNames)
     
     fmt.Println("Hunting...Please wait!")
 
     var wg sync.WaitGroup
-    var personsTotal int64 = int64(len(duplicateFree))
+    var personsTotal int64 = int64(len(personsNames)) //duplicateFree
+    var FacebookEntriesTotal int = len(facebookEntries)
+    
     results := make(chan Result, personsTotal)
-    done := make(chan bool, 16)
     
     workChan0 := make(chan Work)
     workChan1 := make(chan Work)
@@ -197,31 +199,35 @@ func main() {
     
     count := int64(0)
 
-    // Prepare work to workers
-    for _, personName := range duplicateFree {
+    CHUNK_SIZE := int(math.Floor(float64(FacebookEntriesTotal / NB_CORES))) //TODO:Leaves the last results behind (< NB_CORES) address that.
+    FacebookEntriesTotal = CHUNK_SIZE * NB_CORES //Abandonning last results.
 
+    fmt.Printf("CHUNK SIZE= %d TOTAL_ENTRIES= %d\n", CHUNK_SIZE, FacebookEntriesTotal)
+    fmt.Printf("Processing %d Persons\n", personsTotal)
+    // Prepare work to workers
+    for _, personName := range personsNames {
         var resultSlice []string
         
 
-        for i := 0; i + i < len(facebookEntries); i += CHUNK_SIZE * 16{
+        for i := 0; i < FacebookEntriesTotal; i += (CHUNK_SIZE * NB_CORES){ 
            
                 
             chunk0 := facebookEntries[i:min(i+CHUNK_SIZE, len(facebookEntries))]
-            chunk1 := facebookEntries[i + CHUNK_SIZE * 2:min(i+CHUNK_SIZE * 2, len(facebookEntries))]
-            chunk2 := facebookEntries[i + CHUNK_SIZE * 3:min(i+CHUNK_SIZE * 3, len(facebookEntries))]
-            chunk3 := facebookEntries[i + CHUNK_SIZE * 4:min(i+CHUNK_SIZE * 4, len(facebookEntries))]
-            chunk4 := facebookEntries[i + CHUNK_SIZE * 5:min(i+CHUNK_SIZE * 5, len(facebookEntries))]
-            chunk5 := facebookEntries[i + CHUNK_SIZE * 6:min(i+CHUNK_SIZE * 6, len(facebookEntries))]
-            chunk6 := facebookEntries[i + CHUNK_SIZE * 7:min(i+CHUNK_SIZE * 7, len(facebookEntries))]
-            chunk7 := facebookEntries[i + CHUNK_SIZE * 8:min(i+CHUNK_SIZE * 8, len(facebookEntries))]
-            chunk8 := facebookEntries[i + CHUNK_SIZE * 9:min(i+CHUNK_SIZE * 9, len(facebookEntries))]
-            chunk9 := facebookEntries[i + CHUNK_SIZE * 10:min(i+CHUNK_SIZE * 10, len(facebookEntries))]
-            chunk10 := facebookEntries[i + CHUNK_SIZE * 11:min(i+CHUNK_SIZE * 11, len(facebookEntries))]
-            chunk11 := facebookEntries[i + CHUNK_SIZE * 12:min(i+CHUNK_SIZE * 12, len(facebookEntries))]
-            chunk12 := facebookEntries[i + CHUNK_SIZE * 13:min(i+CHUNK_SIZE * 13, len(facebookEntries))]
-            chunk13 := facebookEntries[i + CHUNK_SIZE * 14:min(i+CHUNK_SIZE * 14, len(facebookEntries))]
-            chunk14 := facebookEntries[i + CHUNK_SIZE * 15:min(i+CHUNK_SIZE * 15, len(facebookEntries))]
-            chunk15 := facebookEntries[i + CHUNK_SIZE * 16:min(i+CHUNK_SIZE * 16, len(facebookEntries))]
+            chunk1 := facebookEntries[i + CHUNK_SIZE * 2:min(i+CHUNK_SIZE * 2, FacebookEntriesTotal)]
+            chunk2 := facebookEntries[i + CHUNK_SIZE * 3:min(i+CHUNK_SIZE * 3, FacebookEntriesTotal)]
+            chunk3 := facebookEntries[i + CHUNK_SIZE * 4:min(i+CHUNK_SIZE * 4, FacebookEntriesTotal)]
+            chunk4 := facebookEntries[i + CHUNK_SIZE * 5:min(i+CHUNK_SIZE * 5, FacebookEntriesTotal)]
+            chunk5 := facebookEntries[i + CHUNK_SIZE * 6:min(i+CHUNK_SIZE * 6, FacebookEntriesTotal)]
+            chunk6 := facebookEntries[i + CHUNK_SIZE * 7:min(i+CHUNK_SIZE * 7, FacebookEntriesTotal)]
+            chunk7 := facebookEntries[i + CHUNK_SIZE * 8:min(i+CHUNK_SIZE * 8, FacebookEntriesTotal)]
+            chunk8 := facebookEntries[i + CHUNK_SIZE * 9:min(i+CHUNK_SIZE * 9, FacebookEntriesTotal)]
+            chunk9 := facebookEntries[i + CHUNK_SIZE * 10:min(i+CHUNK_SIZE * 10, FacebookEntriesTotal)]
+            chunk10 := facebookEntries[i + CHUNK_SIZE * 11:min(i+CHUNK_SIZE * 11, FacebookEntriesTotal)]
+            chunk11 := facebookEntries[i + CHUNK_SIZE * 12:min(i+CHUNK_SIZE * 12, FacebookEntriesTotal)]
+            chunk12 := facebookEntries[i + CHUNK_SIZE * 13:min(i+CHUNK_SIZE * 13, FacebookEntriesTotal)]
+            chunk13 := facebookEntries[i + CHUNK_SIZE * 14:min(i+CHUNK_SIZE * 14, FacebookEntriesTotal)]
+            chunk14 := facebookEntries[i + CHUNK_SIZE * 15:min(i+CHUNK_SIZE * 15, FacebookEntriesTotal)]
+            chunk15 := facebookEntries[i + CHUNK_SIZE * 16:min(i+CHUNK_SIZE * 16, FacebookEntriesTotal)]
 
             wg.Add(16)
 
@@ -260,7 +266,7 @@ func main() {
             workChan15 <- Work{personName, chunk15}
 
             // Process results
-			for j:=0;j<16;j++{
+			for j:=0;j<NB_CORES;j++{
 				select {
 				case result := <-results:
 					if result.Entries != nil{
@@ -308,9 +314,23 @@ func main() {
     close(workChan14)
     close(workChan15)
     close(results)
-    close(done)
-    
    
+    //Clear the remaining results
+    for result := range results{
+        var resultSlice []string
+        if result.Entries != nil{
+            for _, entry := range result.Entries{
+                resultSlice = append(resultSlice, entry)
+                //fmt.Println(entry)
+            }
+            //fmt.Println("\nWriting to file...", result.Person)
+            err = writeResults(resultSlice, OutFile)
+            if err != nil {
+                fmt.Println(err)
+            }
+            clear(resultSlice)
+        }
+    }
 
     
 }
