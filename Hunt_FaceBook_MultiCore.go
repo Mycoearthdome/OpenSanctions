@@ -288,10 +288,6 @@ func main() {
 		count++
 				
 		fmt.Printf("\rStatus: %d/%d", count, personsTotal)
-		
-		if count == personsTotal {
-			break
-		}
     }
 
     wg.Wait()
