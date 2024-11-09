@@ -316,17 +316,39 @@ func main() {
     fmt.Printf("Processing %d Persons\n", personsTotal)
     // Prepare work to workers
     
-    for _, personName := range personsNames {
-        wg.Add(1)
-        go ProcessingPersons(personName, CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+    //for _, personName := range personsNames {
+    //    wg.Add(1)
+    //    go ProcessingPersons(personName, CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
 
-        count++
+    for i:=0;i<len(personsNames);i += 16{
+
+        wg.Add(16)
+
+        go ProcessingPersons(personsNames[i], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+1], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+2], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+3], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+4], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+5], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+6], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+7], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+8], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+9], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+10], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+11], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+12], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+13], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+14], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        go ProcessingPersons(personsNames[i+15], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        wg.Wait()
+
+        count = count + 16
 				
 		fmt.Printf("\rStatus: %d/%d", count, personsTotal)
 		
     }
 
-    wg.Wait()
+    //wg.Wait()
 
     close(results)
    
