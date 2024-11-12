@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+./Hunt_FaceBook_MultiCore
+./Reconcile_Hunted
+./Fullz_Possible_FB_Match
+echo "Fullz saved as Probable_FB_Sanctions.txt ---> done!"
