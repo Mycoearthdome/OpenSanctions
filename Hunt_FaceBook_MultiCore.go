@@ -14,7 +14,8 @@ const (
     FaceBookFile = "FaceBook_2019.txt"
     OutFile = "Persons_Found.txt"
     MAX_RESULTS = 5
-    NB_CORES = 16
+    NB_CORES = 10
+    MAX_LINES = 1000000 // One million lines per reference file.
 )
 
 var (
@@ -30,6 +31,65 @@ type Work struct {
     Person string
     Chunk []string
 }
+
+func SplitLargeFile(filename string, lines []string) {
+    file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        panic(err)
+    }
+    defer file.Close()
+
+    for _, line := range lines {
+        _, err := file.WriteString(line + "\n")
+		if err != nil {
+			panic(err)
+		}
+    }
+
+
+}
+
+
+func InitializeFiles(filename string) ([]string, error) {
+    var curline int64 = 0
+    var filenames []string
+    var basefilename = strings.Split(filename, ".")[0]
+    var ext = strings.Split(filename, ".")[1]
+    var Count int = 0
+    var Start int64 = 0
+    file, err := os.Open(filename)
+    if err != nil {
+        return nil, err
+    }
+    defer file.Close()
+
+    var lines []string
+    scanner := bufio.NewScanner(file)
+    const maxCapacity = 1024 * 1024 // 1MB
+    buf := make([]byte, maxCapacity)
+    scanner.Buffer(buf, maxCapacity) // Increase the buffer size
+    for scanner.Scan() {
+        lines = append(lines, scanner.Text())
+        if curline == MAX_LINES{
+            Count++
+            newfilename := fmt.Sprintf("%s_%d.%s", basefilename, Count, ext)
+            SplitLargeFile(newfilename, lines[Start:Start+curline])
+            filenames = append(filenames, newfilename)
+            fmt.Printf("Wrote %s...to disk\n", newfilename)
+            Start = Start + curline - 1
+            curline = 0
+        }
+        curline++
+    }
+    Count++
+    newfilename := fmt.Sprintf("%s_%d.%s", basefilename, Count, ext)
+    SplitLargeFile(newfilename, lines[Start:Start+curline])
+    filenames = append(filenames, newfilename)
+    fmt.Printf("Wrote %s...to disk\n", newfilename)
+
+    return filenames, scanner.Err()
+}
+
 
 func loadFile(filename string) ([]string, error) {
     file, err := os.Open(filename)
@@ -167,12 +227,12 @@ func ProcessingPersons(personName string, CHUNK_SIZE int, facebookEntries []stri
     workChan7 := make(chan Work)
     workChan8 := make(chan Work)
     workChan9 := make(chan Work)
-    workChan10 := make(chan Work)
-    workChan11 := make(chan Work)
-    workChan12 := make(chan Work)
-    workChan13 := make(chan Work)
-    workChan14 := make(chan Work)
-    workChan15 := make(chan Work)
+    //workChan10 := make(chan Work)
+    //workChan11 := make(chan Work)
+    //workChan12 := make(chan Work)
+    //workChan13 := make(chan Work)
+    //workChan14 := make(chan Work)
+    //workChan15 := make(chan Work)
     
 
     var resultSlice []string
@@ -191,14 +251,14 @@ func ProcessingPersons(personName string, CHUNK_SIZE int, facebookEntries []stri
         chunk7 := facebookEntries[i + CHUNK_SIZE * 8:min(i+CHUNK_SIZE * 8, FacebookEntriesTotal)]
         chunk8 := facebookEntries[i + CHUNK_SIZE * 9:min(i+CHUNK_SIZE * 9, FacebookEntriesTotal)]
         chunk9 := facebookEntries[i + CHUNK_SIZE * 10:min(i+CHUNK_SIZE * 10, FacebookEntriesTotal)]
-        chunk10 := facebookEntries[i + CHUNK_SIZE * 11:min(i+CHUNK_SIZE * 11, FacebookEntriesTotal)]
-        chunk11 := facebookEntries[i + CHUNK_SIZE * 12:min(i+CHUNK_SIZE * 12, FacebookEntriesTotal)]
-        chunk12 := facebookEntries[i + CHUNK_SIZE * 13:min(i+CHUNK_SIZE * 13, FacebookEntriesTotal)]
-        chunk13 := facebookEntries[i + CHUNK_SIZE * 14:min(i+CHUNK_SIZE * 14, FacebookEntriesTotal)]
-        chunk14 := facebookEntries[i + CHUNK_SIZE * 15:min(i+CHUNK_SIZE * 15, FacebookEntriesTotal)]
-        chunk15 := facebookEntries[i + CHUNK_SIZE * 16:min(i+CHUNK_SIZE * 16, FacebookEntriesTotal)]
+        //chunk10 := facebookEntries[i + CHUNK_SIZE * 11:min(i+CHUNK_SIZE * 11, FacebookEntriesTotal)]
+        //chunk11 := facebookEntries[i + CHUNK_SIZE * 12:min(i+CHUNK_SIZE * 12, FacebookEntriesTotal)]
+        //chunk12 := facebookEntries[i + CHUNK_SIZE * 13:min(i+CHUNK_SIZE * 13, FacebookEntriesTotal)]
+        //chunk13 := facebookEntries[i + CHUNK_SIZE * 14:min(i+CHUNK_SIZE * 14, FacebookEntriesTotal)]
+        //chunk14 := facebookEntries[i + CHUNK_SIZE * 15:min(i+CHUNK_SIZE * 15, FacebookEntriesTotal)]
+        //chunk15 := facebookEntries[i + CHUNK_SIZE * 16:min(i+CHUNK_SIZE * 16, FacebookEntriesTotal)]
 
-        wg.Add(16)
+        wg.Add(10) //16
 
         go worker(workChan0, results, wg)
         go worker(workChan1, results, wg)
@@ -210,12 +270,12 @@ func ProcessingPersons(personName string, CHUNK_SIZE int, facebookEntries []stri
         go worker(workChan7, results, wg)
         go worker(workChan8, results, wg)
         go worker(workChan9, results, wg)
-        go worker(workChan10, results, wg)
-        go worker(workChan11, results, wg)
-        go worker(workChan12, results, wg)
-        go worker(workChan13, results, wg)
-        go worker(workChan14, results, wg)
-        go worker(workChan15, results, wg)
+        //go worker(workChan10, results, wg)
+        //go worker(workChan11, results, wg)
+        //go worker(workChan12, results, wg)
+        //go worker(workChan13, results, wg)
+        //go worker(workChan14, results, wg)
+        //go worker(workChan15, results, wg)
 
         workChan0 <- Work{personName, chunk0}
         workChan1 <- Work{personName, chunk1}
@@ -227,12 +287,12 @@ func ProcessingPersons(personName string, CHUNK_SIZE int, facebookEntries []stri
         workChan7 <- Work{personName, chunk7}
         workChan8 <- Work{personName, chunk8}
         workChan9 <- Work{personName, chunk9}
-        workChan10 <- Work{personName, chunk10}
-        workChan11 <- Work{personName, chunk11}
-        workChan12 <- Work{personName, chunk12}
-        workChan13 <- Work{personName, chunk13}
-        workChan14 <- Work{personName, chunk14}
-        workChan15 <- Work{personName, chunk15}
+        //workChan10 <- Work{personName, chunk10}
+        //workChan11 <- Work{personName, chunk11}
+        //workChan12 <- Work{personName, chunk12}
+        //workChan13 <- Work{personName, chunk13}
+        //workChan14 <- Work{personName, chunk14}
+        //workChan15 <- Work{personName, chunk15}
 
         // Process results
         for j:=0;j<NB_CORES;j++{
@@ -255,7 +315,9 @@ func ProcessingPersons(personName string, CHUNK_SIZE int, facebookEntries []stri
         }
     }
 
+    mu.Lock()
     wg.Wait()
+    mu.Unlock()
 
     // Close channels
     close(workChan0)
@@ -268,106 +330,107 @@ func ProcessingPersons(personName string, CHUNK_SIZE int, facebookEntries []stri
     close(workChan7)
     close(workChan8)
     close(workChan9)
-    close(workChan10)
-    close(workChan11)
-    close(workChan12)
-    close(workChan13)
-    close(workChan14)
-    close(workChan15)
+    //close(workChan10)
+    //close(workChan11)
+    //close(workChan12)
+    //close(workChan13)
+    //close(workChan14)
+    //close(workChan15)
 
 }    
 
 
 
 func main() {
-    fmt.Println("Reading POI file...Please wait")
+    fmt.Println("Splitting main reference file in chunck of 1000000 per file..Please wait!")
+    FBfilenames, err := InitializeFiles(FaceBookFile)
+    if err != nil{
+        panic(err)
+    }
+    fmt.Println("Loading Person file...Please wait!")
     personsNames, err := loadFile(PersonsFile)
     if err != nil {
         fmt.Println(err)
         return
     }
 
-    fmt.Println("Loading FB_2019 data...Please wait!")
-    facebookEntries, err := loadFile(FaceBookFile)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-
-    //fmt.Println("Removing duplicates...Please wait!")
-
-    //duplicateFree := removeDuplicates(personsNames)
-    
-    fmt.Println("Hunting...Please wait!")
-
-    var wg sync.WaitGroup
-    var personsTotal int64 = int64(len(personsNames)) //duplicateFree
-    var FacebookEntriesTotal int = len(facebookEntries)
-    
-    results := make(chan Result, personsTotal)
-    
     count := int64(0)
 
+    for i:=0;i<len(personsNames);i += NB_CORES{
+        
+        //fmt.Println("Removing duplicates...Please wait!")
 
-    CHUNK_SIZE := int(math.Floor(float64(FacebookEntriesTotal / NB_CORES))) //TODO:Leaves the last results behind (< NB_CORES) address that.
-    FacebookEntriesTotal = CHUNK_SIZE * NB_CORES //Abandonning last results.
+        //duplicateFree := removeDuplicates(personsNames)
+        
+        fmt.Println("Hunting...Please wait!")
 
-    fmt.Printf("CHUNK SIZE= %d TOTAL_ENTRIES= %d\n", CHUNK_SIZE, FacebookEntriesTotal)
-    fmt.Printf("Processing %d Persons\n", personsTotal)
-    // Prepare work to workers
-    
-    //for _, personName := range personsNames {
-    //    wg.Add(1)
-    //    go ProcessingPersons(personName, CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+        var wg sync.WaitGroup
+        var personsTotal int64 = int64(len(personsNames)) //duplicateFree
+        
+        
+        results := make(chan Result, personsTotal)
+        
+        for _, FBfilename := range FBfilenames{
 
-    for i:=0;i<len(personsNames);i += 16{
-
-        wg.Add(16)
-
-        go ProcessingPersons(personsNames[i], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+1], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+2], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+3], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+4], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+5], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+6], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+7], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+8], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+9], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+10], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+11], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+12], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+13], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+14], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        go ProcessingPersons(personsNames[i+15], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
-        wg.Wait()
-
-        count = count + 16
-				
-		fmt.Printf("\rStatus: %d/%d", count, personsTotal)
-		
-    }
-
-    //wg.Wait()
-
-    close(results)
-   
-    //Clear the remaining results
-    for result := range results{
-        var resultSlice []string
-        if result.Entries != nil{
-            for _, entry := range result.Entries{
-                resultSlice = append(resultSlice, entry)
-                //fmt.Println(entry)
-            }
-            //fmt.Println("\nWriting to file...", result.Person)
-            err = writeResults(resultSlice, OutFile)
+            //fmt.Println("Loading FB_2019 data...Please wait!")
+            facebookEntries, err := loadFile(FBfilename)
             if err != nil {
                 fmt.Println(err)
+                return
             }
-            clear(resultSlice)
-        }
-    }
 
+            var FacebookEntriesTotal int = len(facebookEntries)
+            CHUNK_SIZE := int(math.Floor(float64(FacebookEntriesTotal / NB_CORES))) //TODO:Leaves the last results behind (< NB_CORES) address that.
+            FacebookEntriesTotal = CHUNK_SIZE * NB_CORES //Abandonning last results.
+
+            wg.Add(10)
+
+            go ProcessingPersons(personsNames[i], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            go ProcessingPersons(personsNames[i+1], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            go ProcessingPersons(personsNames[i+2], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            go ProcessingPersons(personsNames[i+3], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            go ProcessingPersons(personsNames[i+4], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            go ProcessingPersons(personsNames[i+5], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            go ProcessingPersons(personsNames[i+6], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            go ProcessingPersons(personsNames[i+7], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            go ProcessingPersons(personsNames[i+8], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            go ProcessingPersons(personsNames[i+9], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            //go ProcessingPersons(personsNames[i+10], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            //go ProcessingPersons(personsNames[i+11], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            //go ProcessingPersons(personsNames[i+12], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            //go ProcessingPersons(personsNames[i+13], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            //go ProcessingPersons(personsNames[i+14], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+            //go ProcessingPersons(personsNames[i+15], CHUNK_SIZE, facebookEntries, FacebookEntriesTotal, results, &wg)
+
+            mu.Lock()
+            wg.Wait()
+            mu.Unlock()
+            
+        }
+
+        //wg.Wait()
+
+        close(results)
     
+        //Clear the remaining results
+        for result := range results{
+            var resultSlice []string
+            if result.Entries != nil{
+                for _, entry := range result.Entries{
+                    resultSlice = append(resultSlice, entry)
+                    //fmt.Println(entry)
+                }
+                //fmt.Println("\nWriting to file...", result.Person)
+                err = writeResults(resultSlice, OutFile)
+                if err != nil {
+                    fmt.Println(err)
+                }
+                clear(resultSlice)
+            }
+        }
+
+        count = count + NB_CORES
+                    
+        fmt.Printf("\rStatus: %d/%d", count, personsTotal)
+    }
 }
