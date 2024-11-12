@@ -28,12 +28,13 @@ func main() {
     personsList := make([][]string, 0)
     for _, entry := range personsNames {
         if entry != "]" {
-			//fmt.Println(entry)
+			fmt.Println(entry)
             entry = strings.TrimSpace(entry)
             parts := strings.Split(entry, " ")
-			//fmt.Println(parts)
-            name := parts[0] + " " + parts[1]
-            personsList = append(personsList, []string{name, strings.Join(parts[2:], ",")})
+			if len(parts) > 1{
+				name := parts[0] + " " + parts[1]
+				personsList = append(personsList, []string{name, strings.Join(parts[2:], ",")})
+			}
         }
     }
 
@@ -56,10 +57,12 @@ func main() {
 func HuntConclusions(infos []string, entitiesEntries []string, outFile string, wg *sync.WaitGroup){
 	defer wg.Done()
 	for _, entry := range entitiesEntries {
-		if strings.Contains(entry, infos[0]) {
-			fmt.Printf("+NAME=%s\n[%s]\n+Facebook->%s\n\n", infos[0], entry, infos[1])
-			writeToFile(outFile, fmt.Sprintf("+NAME=%s\n%s\n+Facebook->%s\n\n", infos[0], entry, infos[1]))
-			break
+		if strings.Contains(entry, "Schema\":\"Person") { //check
+			if strings.Contains(entry, infos[0]) {
+				fmt.Printf("+NAME=%s\n[%s]\n+Facebook->%s\n\n", infos[0], entry, infos[1])
+				writeToFile(outFile, fmt.Sprintf("+NAME=%s\n%s\n+Facebook->%s\n\n", infos[0], entry, infos[1]))
+				break
+			}
 		}
 	}
 }

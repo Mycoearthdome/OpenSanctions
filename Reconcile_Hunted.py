@@ -46,18 +46,21 @@ for FBdetails in Persons_Found:
                     f.close()
 
         else:
-            if "female" in details[1]:
-                details = details[1].split(',"female",')
+            if "female" in details[0]:
+                details = details[0].split(',"female",')
                 details = details[0].split(',female,')
             else:
-                if "male" in details[1]:
-                    details = details[1].split(',"male",')
+                if "male" in details[0]:
+                    details = details[0].split(',"male",')
                     details = details[0].split(',male,')
                 else:
-                    details = [details[1]]
+                    details = [details[:]]
             try:
-                FirstName = details[0].split(",")[-2].strip('"')
-                LastName = details[0].split(",")[-1].strip('"')
+                FirstName = details[0].split(",")[-2]
+                LastName = details[0].split(",")[-1]
+                if FirstName == "None" and LastName == "None":
+                    FirstName = details[0].split(",")[-4]
+                    LastName = details[0].split(",")[-3]
             except:
                 continue
             if FirstName != "None":
