@@ -354,6 +354,8 @@ func main() {
         return
     }
 
+    fmt.Println("Hunting...Please wait!")
+
     count := int64(0)
 
     for i:=0;i<len(personsNames);i += NB_CORES{
@@ -362,7 +364,7 @@ func main() {
 
         //duplicateFree := removeDuplicates(personsNames)
         
-        fmt.Println("Hunting...Please wait!")
+        
 
         var wg sync.WaitGroup
         var personsTotal int64 = int64(len(personsNames)) //duplicateFree
